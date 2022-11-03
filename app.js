@@ -1,3 +1,18 @@
+/////////Level 3 - Using Enviroments Variables to Keep Secrets Safe/////////////
+/*
+https://www.theregister.com/2015/01/06/dev_blunder_shows_github_crawling_with_keyslurping_bots/
+https://vertis.io/2013/12/16/unauthorised-litecoin-mining/
+We need these secrets to be able to encrypt our database. And for us to be able to collaborate with other people
+or simply just using version control or backing up our project to GitHub then we will need to publish it right?
+So the way that developers solve this conundrum is through using something called environment variables.*/
+//3.1npm i dotenv
+//3.2 https://www.npmjs.com/package/dotenv
+require('dotenv').config()
+/*It will be active and running and all we need to do now is to define our environment variable.
+Now it's important that you put it right at the top because otherwise if you try to use an environment
+variable and it's not configured then you won't be able to access it.*/
+
+
 /*0 mkdir - npm init -y - npm i express body pasrser ejs mongoose mongoose-encryption
 /*0.1-------------Require and Install these package in Hyperterminal----------*/
 const express = require("express");
@@ -16,47 +31,49 @@ app.use(bodyParser.urlencoded({
 
 
 /////////Level 1 Encryption - Rgisters users with username and password/////////
-/*And in order to do this we're going to be using Level 1 security,
-so the lowest level possible of security for our website.
-And this is simply just going to be creating an account for the user,
-storing their email and password in our database
-so that when they come back at a later date we can check their email against their password
-and see if we should let them pass or not.*/
+/*And in order to do this we're going to be using Level 1 security, so the lowest level possible of security for our website.
+And this is simply just going to be creating an account for the user,storing their email and password in our database
+so that when they come back at a later date we can check their email against their password and see if we should let them pass or not.*/
 /*1.1---------------Create a database called userDB----------------------------*/
-//Before make sure require&install mongoose package
-//and make sure to start mongodb server:  Hyperterminal-open new tab- write mongod-press enter
+//Before make sure require&install mongoose package and  to start mongodb server:  Hyperterminal-open new tab- write mongod-press enter
 mongoose.connect("mongodb://localhost:27017/userDB");
 /*1.2 userSchema is just a simple Javascript object
-const userSchema = {
-  email: String,
-  password: String
-};
-*/
+const userSchema = { email: String, password: String}; */
 
 //////////////////////Level 2 Database Encryption //////////////////////////////
-/*2.1
-https://www.npmjs.com/package/mongoose-encryption
-https://mongoosejs.com/docs/guide.html
+/*2.1 https://www.npmjs.com/package/mongoose-encryption  https://mongoosejs.com/docs/guide.html
 userSchema is actually an object that's created from the mongoose.Schema  class.*/
-const userSchema = new mongoose.Schema({
-  email: String,
-  password: String
-});
+const userSchema = new mongoose.Schema({ email: String, password: String });
+
+
+//3.3 Create a file named .env inside route directory (in our case inAuthentication-Secrets directory)
+/*3.4 Inside .env file,
+We define the environment variables that we want to save.
+So the top contender is of course this constant code secret. //2.2 var secret = "Thisisourlittlesecret";
+So let's go ahead and cut it out of our app.js and paste it into our .env file. And let's formatt it.
+Also, let's create an API there. API_KEY=ajddndjddklla*/
+//3.5.1  Get access to our environment variables
+console.log(process.env.API_KEY);
+//3.6 nodemon app.js - localhost:3000 - login - email a@b.com  pasword qwerty - login
+/*3.7
+Hyperterminal - touch .gitignore
+copy https://github.com/github/gitignore -Node Modules
+paste inside .gitignore
+Atom is helpful enough to show you the files that will be ignored by showing it to you in this kind of greyed out mode.
+*/
 
 /*2.2 So there's two ways of going about encrypting your database using this Mongoose encryption package.
-One way is to create an encryption key and assigning key.
-https://www.npmjs.com/package/mongoose-encryption -Basic
+One way is to create an encryption key and assigning key. https://www.npmjs.com/package/mongoose-encryption -Basic
 Other way is by using the convenient method of defining a secret which is simply a long string and
 then we're going to use that secret to encrypt our database:
-https://www.npmjs.com/package/mongoose-encryption -Secret String Instead of Two Keys
-https://mongoosejs.com/docs/plugins.html*/
-var secret = "Thisisourlittlesecret";
+https://www.npmjs.com/package/mongoose-encryption -Secret String Instead of Two Keys https://mongoosejs.com/docs/plugins.html*/
+//2.2 var secret = "Thisisourlittlesecret";
 //userSchema.plugin(encrypt, { secret: secret }); //encrypts entire the database
-userSchema.plugin(encrypt, { secret: secret, encryptedFields: ["password"] }); //https://www.npmjs.com/package/mongoose-encryption  -Encrypt Only Certain Fields
+//3.5.2 //2.2
+userSchema.plugin(encrypt, {requireAuthenticationCode:false, secret: process.env.SECRET, encryptedFields: ["password"] }); //https://www.npmjs.com/package/mongoose-encryption  -Encrypt Only Certain Fields
 /*So now that we've added our encryption package to our userSchema, we've defined the secret that we're going to use to encrypt our password
-and also the field that we actually want to encrypt, we're pretty much done.
-So we don't actually have to do anything else special in the register or the login sections because
-the way that Mongoose encrypt works is that
+and also the field that we actually want to encrypt, we're pretty much done.So we don't actually have to do anything else
+special in the register or the login sections because the way that Mongoose encrypt works is that
 it will encrypt when you call save(), and then it will decrypt when you call find().*/
 
 //1.3 or 2.3
@@ -118,8 +135,8 @@ Click register. And we see the secret page */
 app.post("/login", function(req,res){
   const username = req.body.username;
   const password = req.body.password;
-  User.findOne({email: username}, function(err, foundUser){
-    if (!err){
+  USER.findOne({email: username}, function(err, foundUser){
+    if (err){
       console.log(err);
     }else{
       if (foundUser){
