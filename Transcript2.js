@@ -1,165 +1,202 @@
 /*
-So in the last lesson we have setup all of our starting files for our very simple website.
-And the next step is the setup account creation for users to allow them to register and login so that
-they can finally view our secrets page of our website.
-
-And in order to do this we're going to be using Level 1 security,
-so the lowest level possible of security for our website.
-And this is simply just going to be creating an account for the user, storing their email and password
-in our database  so that when they come back at a later date we can check their email against their password
-and see if we should let them pass or not.
-
-So in order to create a user account and store these pieces of data then we're going to have to create
-a user database.
-So we're going to do that using our good old friend Mongoose and MongoDB.
-So let's go ahead and stop our server and use npm to install mongoose.
-And as always we're going to need to require it so Mongoose equals require Mongoose.
-
-So now that we've required mongoose, it's time to put it into action and we're going to use it to connect to our MongoDB.
-So to do that we say mongoose.connect and then we specify the URL where our MongoDB database
-is located which as always is going to be our localhost.
-So we're going to specify mongodb://localhost:27017 which is the default port for MongoDB.
-And then we're going to have a forward slash and the name of our database which we're going to call userDB.
-And finally we're just going to add in that flag which is code useNewUrlParser
-and this will remove that little warning that we get in the console.
-So that's all we need to connect to our MongoDB.
-
-So let's try and run our app with nodemon app.js in the secrets folder and we get a error.
-And it tells us that there's a Mongo network error and it failed to connect to the server.
-Well the reason is because we haven't started up our MongoDB server yet.
-So if we want to do that we have to type the mongod command and now we're listening on 27017.
-So if we control + C and rerun our command then it should now be all good and we no longer have this problem.
-So everything's all looking great.
-Our server started on port 3000.
-
----
-Now all we have to do is set up our new user database.
-And to do that we're going to create a schema first.
-So we're going to create a userSchema and our userSchema is going to be a very simple Javascript object that only has two fields.
-So it's going to have a email which is gonna be a string and it's also going to have a password which is also going to be a string.
-And now we can use our userSchema to set up a new user model.So it's going to be a new mongoose.model
-and then we have to specify the name of our collection which is also going to be User in the singular form with a capital U
-and it's going to be created using that userSchema that we made just there.
-So now we can start creating users and adding it to this userDB.
----
-So the point at which we want to create our users is of course when the user goes to the register page
-and they've typed in their email and their password and they've decided to hit the submit button, then
-this form makes a post request to our register route.
+So we've taken a look at level 1 encryption which is basically just storing the password as plain text in our database.
+So maybe it'll be a little bit difficult for people to get access to our server and access our database.
+At least you can't just simply right click on a website to view page source and be able to see it in the HTML.
+Well at least it's stored at server level. But that's not really good enough.
+So let's go ahead and see what we can do to improve the security for our users on our website.
 -
-So in order to catch that we're going to create our register route right here.
-So we're going to write app.post and we're going to target the register route. And then we can add
-in our callback with that req and res
-and then inside the callback is where we're going to create our brand new user.
-So we're going to create the user using the information that they passed over from here.
-So you can see that these two inputs, one has a type of email and the other one has a type of password
-but the most important thing to grab that data from the body of the post request is to know their names.
-So one is called username and one is called Password.
+So let's increase to level 2 authentication. And level 2 authentication involves the use of encryption.
+So what exactly is encryption?
+Well basically all it is is just scrambling something so that people can't tell what the original was
+unless they were in on the secret and they knew how to unscramble it.
+This is exactly the same as if you and your friend were sending each other secret messages and you had
+a key to encode the message that you both knew so that you could decode the message.
+Now on a bigger scale if you've ever watched The Imitation Game or read about the Enigma machine,
+well that is basically a form of encryption.
 -
-Let's go ahead and create a brand new user we'll call them a newUser.
-And this is going to be created using that user model here.
-So newUser open up a set of parentheses and then some curly braces and we're going to specify the values for the two fields.
-So one is called email and the other one is called password and let's just check to make sure that we've got it right,
-email and password. And the email is gonna be set to req.body.username
-so catching whatever it is that they typed into this input and then we're going to set the password
-to req.body.password which will be equal to whatever they typed in over here.
+And the Enigma machine if you don't know is just simply a machine that was used during World War 2 when
+the Germans would send each other messages they would use the machine to encrypt those messages so that
+when the messages are intercepted say over the radio, unless you had the same Enigma machine and you
+knew what the decoding Key was or what the settings were for the machine, then you wouldn't be able to
+tell what it is that they were trying to communicate with each other.
+If you were interested, I really recommend watching two videos that were done by Numberphile on YouTube and
+I've linked to it in the course resources list but it explains the Enigma machine
+and it talks about the flaw in the Enigma machine that led Alan Turing and other people at Bletchley Park
+to be able to crack the code and create what was very much a specialised computer to be able to decode
+those messages and helped the Allies win the war.
+And if you ever visit London be sure to go and check out Bletchley Park and they have a computer museum
+next to it as well which is super fascinating. Anyways I digress.
 -
-So now we're ready to go ahead and save this new user.
-So we're gonna say newUser.save, not saver but save.
-And then we're going to add a callback into the save function to check to see that during the save process
-if there were any errors and if there were some errors then we're going to log those errors.
-But if there weren't any errors then we're going to res.render the secrets page.
-So this is really important.
+So back to ciphers and encryption. One of the earliest ways of encrypting messages that we know about is the Caesar cipher.
+And this comes from Julius Caesar who was one of the generals in the Roman Empire and what he did is
+he would send messages to his generals and he would encrypt it
+so if his messenger got murdered along the way then his messages would be kept secret.
+And this is one of the simplest forms of encryption we know about. And it's very simple.
+Let's say we have the alphabet right?
+ABCDEFG. All that the Caesar Cipher does it's a letter substitution cipher.
+And the key for the cipher is the number of letters that you would shift by.
+So if you knew what the shift pattern was then you could really quickly decipher the message.
+So if we were to encrypt the word Hello there's a really neat tool online that can help us do that.
+It's called cryptii.com
+and it's got two 'i's at the end. And you can basically choose the kind of
+cipher or encryption that you want to-- that you want to use and then you can specify a shift and we're
+going to see a shift of three let's say.
+So if my text was Hello, then it becomes shifted into "khoor" and to an unknowing person and a non cryptographer
+it can be quite difficult to see at a glance what exactly this is trying to say.
+-
+Now in modern days and with modern cryptography this is overly simplistic and it's very very easy to crack.
+But there are other forms of encryption which are a little bit more complicated and it involves a lot
+more maths to make it more time consuming for somebody to crack.
+But essentially all encryption works exactly the same way.
+You have a way of scrambling your message and it requires a key to be able to unscramble that message.
+All right.
+So now that we've learned all about encryption, it's time to go ahead and implement it so that we can
+encrypt our users passwords on our database and keep it secure.
+-
+So the npm package that we're going to use is something called mongoose-encryption.
+And if you take a look at the documentation it's basically a very simple encryption package that works with a mongoose.
+So it's perfect for us.
+-
+So it uses an encryption algorithm called AES which is a relatively modern encryption algorithm
+and it is far more secure than something like the Caesar cipher which is very very easy to break.
+Now before we get started I recommend you just have a quick read of the documentation here.
+This package does two things:
+it can encrypt and it can authenticate.
+We're only going to use its most basic functionality which is encryption and we're going to leave the
+authentication for a later lesson when we discuss things such as hashing algorithms.
+So as always to begin we're going to go ahead and install that package into our project.
+-
+All right.
+So first things first, let's stop our server from running and let's go ahead and install mongoose-encryption.
+Let's just make sure that we don't have any typos in that name and let's hit enter.
+So while NPM is installing that package we can go ahead and require it in our app.js.
+So I'm going to call this encrypt and we're going to set it equal require mongoose-encryption.
+All right.
+-
+So now that we have the package required and installed, we're gonna go ahead and use it.
+And of course to figure out how we do that
+we go to the documentation. So it briefly describes how the encryption actually works
+and then it tells you how to get started.
+So we've got installation step which we've already done, so now we're onto the usage step.
+-
+So firstly we have to require mongoose and require mongoose-encryption and then we have to change our
+Mongoose schema a little bit because notice that in their Mongoose schema they're actually creating a new
+Mongoose schema whereas ours is just a very simple Javascript object.
+Now this works as long as you're not doing anything fancy with the schema.
+But in this case, as you'll see later on, we're actually adding this encrypt package as a plugin to that Mongoose schema.
+So
+we're going to have to level up a little bit and turn our schema into a proper Mongoose schema object
+and in fact if you take a look at the schemas section in the Mongoose documentation
+where they talk about defining your schema, you can see that they're also creating a new mongoose.Schema
+and then they're creating a new object from that class in order to define the schema.
+So let's go ahead and change our very simple version of a schema into a full Mongoose schema.
+So we're going to type new mongoose.Schema with a capital "S" and then we can open a set of parentheses
+to enclose this entire Javascript object.
+So one here and one here.
+So now this user schema is no longer just a simple Javascript object but it's actually an object that's
+created from the Mongoose schema class.
+So, let's go ahead and hit save and then let's see what else we need to do.
+-
+So there's two ways of going about encrypting your database using this Mongoose encryption package.
+One way is to create an encryption key and assigning key. Alternatively and the one that we're going
+to be using is a little bit later down in the documentation which is why it's helpful to read the entire documentation.
+We're going to be using the convenient method of defining a secret which is simply a long string and
+then we're going to use that secret to encrypt our database.
+So let's go ahead and define that secret down here.
+So I'm gonna create a new constant that's called secret and this is gonna be set to a long string that you're going to keep secret.
+So let's say ThisisourLittlesecret.
+-
+And now we're ready to use that secret to encrypt our database
+and we do that by taking that schema that we defined earlier on over here
+and we're going to add our Mongoose encrypt as a plug in to our schema
+and we're gonna pass over our secret as a Javascript object.
+So let's go ahead and implement this line of code in our app.js
+and I'm gonna put it right below here.
+Now it's important that you add this plugin to the schema before you create your Mongoose model
+because you can see that we're passing in the userSchema as a parameter to create our new Mongoose model, that's the user model.
+But before then,
+we're going to add our encrypt package as a plugin.
+And if you have a moment to spare, do read the part of the documentation on plugins on the Mongoose website
+https://mongoosejs.com/docs/plugins.html
+and it talks about how essentially what plugins are is that just extra bits of packaged code that you
+can add to the Mongoose schemas to extend their functionality or give them more powers essentially.
+So now that our schema has this encryption power enabled, but what this will do is it will encrypt our entire database.
+-
+Now you may or may not want that kind of behavior for your database because later on when the user logs
+in we're going to have to search through our database to find their email address.
+It's best if we only encrypt the password field and leave the email field unencrypted.
+-
+So to do that, we have to change an option for our Mongoose encryption package and the option that we're
+going to change is to only encrypt certain fields
+and they cover that in this section of the documentation. And to do that all
+you have to do is to add this option "encryptedFields" into that JavaScript object at the end of that plugin code.
+So we're going to copy this little part here and we're going to add it just before the closing curly brace,
+so right after our secret right here.
+-
+Now in our case the encrypted field is not age but it's going to be the password field.
+So we're going to swap out this particular input with password and that's just a simple string that
+you put in there that you have to make sure matches with one of the names of your fields.
+userSchema.plugin(encrypt, { secret: secret, encryptedFields: ["password"] });
+-
+Now if you wanted to encrypt multiple fields
+you can also do that just by adding other entries into this array  ["password", " ", " ",...]
 --
-At the moment on our website
-we're able to handle get requests to the root route, the login route and the register route.
-But notice that there isn't a app.get for the /secret route because we don't want to render
-that unless the user is registered or logged in.
-So we're only rendering the secrets page from the register and login routes for now.
+So now that we've added our encryption package to our userSchema,
+we've defined the secret that we're going to use to encrypt our password
+and also the field that we actually want to encrypt,
+we're pretty much done.
 -
-So now that we've set up our website if the user has been successfully created in our database
-then they should be able to see the secrets page.
-And this is currently the only way they can view the secrets page.
+So we don't actually have to do anything else special in the register or the login sections because
+the way that Mongoose encrypt works is that it will encrypt when you call save, and then it will decrypt
+when you call find.
+So that means that when we create a new user with an email a password and we call save, automatically
+behind the scenes Mongoose encrypt will encrypt our password field.
+And when we later on try to find our document based off the email that the user has entered then at this stage Mongoose encrypt will decrypt
+our password field to be able to check it in this step and see if the user can login.
+-
+So let's save our file and let's go ahead and run it by using nodemon app.js
+and make sure there's no errors on running it.
+Then we can go ahead and hit up localhost:3000 and try to register.
+So we've already created a user called 1@2.com,
+let's create a2b.com now and let's define their password as qwerty,
+-
+so the first six letters of the keyboard and believe it or not this is one of the top five passwords
+that's used by people all across the world along with the actual word password and 123456.
+Now if I have read out your password just now, please change it while you learning security. It's a good
+idea to update your own as well.
+-
+So let's go ahead and hit register and we've been taken to the secret page.
+So that means we've successfully saved our new user into our database.
+-
+So let's take a look at that user inside Robo 3T
+So we can see that previously when we didn't encrypt our password it's just out there in plain sight basically.
+Anyone can read this user's password.
+But now that we have added our encryption, you can see that it's now a very long binary string that is
+very hard for anybody to guess what it might be.
+So that means if somebody hacks into our database they won't be able to skim everybody's password immediately
+like they can do here.
+So we've updated the security for our users just a little bit.
 --
-So let's go ahead and save our code and check it out.
-So our server is still running on port 3000 and if we go over to our localhost:3000
-then you can see we've got our home page and we haven't set up the login screen yet.
-So let's go over to register and let's go ahead and create an email.
-Now at this stage it doesn't really matter what your email address is.
-You can call it 1@2.com if you wish.
-The only thing that that email checks in terms of validation is that there is:
-an @ sign in there and there's a . something that comes afterwards.
-So I'm just gonna use 1@2.com or test@email.com just to test it for now.
-And then we're gonna add a password and I'm just gonna put 123.
-We also don't have any validation there so it doesn't really matter how many digits I put in there.
-And this is really good for testing right now
-otherwise you're gonna be entering a 12 digit password every time you test your forms which is not what we want.
-So now let's go ahead and click register.
+So let's see how Mongoose encryption handles decryption.
+So let's go back to the home page and try to log in our user
+a@b.com and let's put in their password which was qwerty.
+Let's go ahead and click Login.
+So it's taken me to the secret website and we know that on our database that password is stored encrypted.
+So that means that when we perform that findOne step, Mongoose encrypt was successful in decrypting
+the password to be able to compare it at this stage.
+And if you want to, you can actually log the value of foundUser.password inside the
+findOne completion block and you'll see it in plain text.
+console.log(foundUser.password)
 -
-And you can see it now renders the secret page
-and it's showing my deepest darkest secrets which is not much of a secret over here.
-So this page is only accessible once you have registered
--
-and we can verify this by going over to our Robo 3T and connecting to our MongoDB on our local host.
-And you can see check it out we've got our userDB over here.
-And in our collections there's a collection of users which only has
-one document at the moment which has an email of 1@2.com with a password of 123.
---
-So at the moment the user can register
-but they can't log in because we haven't created a app.post for our login route.
-So when they go onto the login page they enter their email and the password that they remembered from
-previously when they created the account and then it makes a post request to the login route.
-So let's go ahead and handle that right now.
-So underneath the app.post for register
-we're going to create an app.post for the /login route.
-And here is where we're going to try and check in our database to see if we actually have a user with the credentials that they put in.
-So those credentials are going to be a username which is going to be the req.body.username
-and also a password which is in request.body.password.
-So now we have these two things that the user entered and we have to check them against our database.
-So we're going to look through our database and see that for the username with this value if their
-password is equal to the one that the user typed in.
-So to do this we're going to say user, so look through are collection of users, and we're going to find
-one where the email field is matching with our username field.
-So remember the username field comes from the user who's trying to log in and the email field is the
-one in our database that's got the saved data. And then we're gonna have a callback with a error and
-potentially a found user and we can check to see if there were any errors
-firstly then we're going to handle that error,
-we're going to log it. But if there weren't any errors then we're going to check to see if there was a found user.
-So does that user with that email exist?
-And if there was a user on our database with that email then we should check to see if that user that
-we found has a password which matches the password that the user typed in on the login page.
-So if the foundUser.password is equal to the password created here.
-And if that is the case then that means not only do we have a user with that email,
-so the user exists and they registered before, but also the password they typed in in the form is equal
-to the one in our database which means that they are the correct user.
-They've successfully logged in and our server has successfully authenticated them.
-So in this case we should also res.render the page that we're trying to access which is the one called secrets.
--
-So now let's close everything off and we should when we save our app.js check if our server still running
-and then go ahead and go back to our home page.
--
-Let's go ahead and try and login with the email and password that I registered previously which was 1@2.com. and 123.
-So let's try it 1@2.com and 123, hit login and it's now revealed the secret page.
----
-So success right? Now there's just one problem.
-If we look at our users collection and we look at the documents in there, there's only one at the moment
-but we can see the user's password in plain text.
-And this is really really bad because if I had millions of users say I was, I don't know, Amazon or Facebook
-or Google and I had all of my users passwords saved in plain text like this
-then any one of my employees can look through my database and know what everybody's password is.
-So that means if I had an employee who wanted to know what was, I don't know,
-Britney Spears's'password on Facebook
-then they could just look at it and they could use it to log in right?
-But also it means that if a hacker decided to hack into my server and locate my database
-then this is a pretty big loot for them
-if everybody's password was stored in plain text. And most people will reuse their passwords and if you
-use the same password on lots of websites then once the hacker knows your email and password for one
-site then they can pretty much login as you across all of the websites including things such as your
-bank account or Paypal which is definitely not what you want.
--
-So firstly, don't reuse passwords.
-Try and make different passwords especially for the accounts which are tied to a payment portal.
-But the second thing is if you're going to make a website, don't store your users passwords in plain text like this.
-It's really really bad.
-So now that we've seen what level 1 authentication looks like, it's time to level up and do right by
-our users and increase the security of our website.
+So this does mean that if somebody was to hack into your website, then they probably will get access to your app.js
+It's not that hard to access it.
+And once they do, they'll find your secret.
+And once they've found your secret
+then they can use the same package to decrypt all of your users passwords.
+So as long as we're able to recover the plain text version of our users passwords
+we're still kind of leaving them out to dry.
+So in the next lesson I want to cover something called environment variables
+and we're going to learn that to enable us to store secrets
+such as our encryption keys or things like API keys that are tied to credit cards,
+anything that you want to keep secure essentially.
 */
