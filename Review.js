@@ -165,7 +165,7 @@ That's the whole point of the Hash function and this is what will make our authe
 $npm i md5
 //remove the mongoose-encryption package (0.1.5) and remove the plugin from our user schema (2_5.1) and instead require "md5".
 var md5 = require('md5');//3.3 do delete|comment  0.1.5 & 2_5.2 & 2_5.1
-app.post("/register", function(req,res){   const newUser = new USER ({ email: req.body.username, password: md5(req.body.password) }); });//3.3.2
+app.post("/register", function(req,res){   const newUser = new USER ({ email: req.body.username, password: md5(req.body.password) }); }); //3.3.2 use md5()
 
 /*3.4
 $nodemon app.js -localhost:3000 enter - register user@hash.com and  password: 123456 -register
@@ -193,4 +193,45 @@ $git commit -m "Level 3  Hashing Paswords"
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-/*LEVEL 3-part2 Hacking 101
+/*LEVEL 3_part2 Hacking 101
+https://plaintextoffenders.com/
+https://haveibeenpwned.com/
+https://www.passwordrandom.com/most-popular-passwords
+https://en.wikipedia.org/wiki/List_of_the_most_common_passwords
+-
+You can even use Google as a basic hash table. You can paste in Google
+the hash (d8578edf8458ce06fbc5bb76a58c5ca4) that you found from the hacked database,
+you perform a simple google search and you come up with the original password (qwerty).
+If it doesn't match anything.
+And the reason is because when you've created a very strong password
+with uppercase letters, lowercase letters, numbers, symbols
+but most importantly a long password.
+--
+When you think about hashing as a mathematical formula,
+you'll realize that as the number of characters of your password increases,
+the computation time that it takes to crack it increases exponentially.
+So it doesn't matter if your account on LinkedIn or Adobe Creative Cloud or Ashley Manson was cracked,
+as long as you had a strong password, they wouldn't be able to work it out from a hash table.
+---
+http://password-checker.online-domain-tools.com/
+and you can put in your password and it'll tell you not only the strength
+but also how long it will take various types of machines to be able to crack that password.
+-
+So even though all of the websites encourage you
+to add a capital letter, a lowercase letter, some numbers and some random characters,
+if you only have six characters in your password, so a short password, it still doesn't take very long to crack.
+//So the most important thing of creating a strong password that is almost uncrackable is just to increase
+the number of characters.
+And also to prevent yourself from being a victim of a dictionary attack
+just make sure that you don't use a dictionary word or a place name or something that is in a directory
+somewhere like a telephone number.All right.
+So at least after this lesson you'll know how to keep yourself more secure!
+--
+But in the next lesson we're going to address these vulnerabilities that occur
+because of weak hashing algorithms and we're going to learn how we can combat hackers
+who try to attack our database using a dictionary attack or by creating a hash table.
+//Write something from keyboard in hackertyper.net to llok like a hacker :D
+*/
+$git log
+$git add .
+$git commit -m "Level 3_part2  Hacking 101"

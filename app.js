@@ -48,7 +48,7 @@ app.get("/register", function(req,res){//0.3
 app.post("/register", function(req,res){//1.2.2
   const newUser = new USER ({
     email: req.body.username,
-    password: md5(req.body.password)    //Level 3.3.2 use md5()
+    password: md5(req.body.password) //3.3.2 use md5()
   });
   newUser.save(function(err){
     if(err){
