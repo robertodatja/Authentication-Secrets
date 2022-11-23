@@ -39,12 +39,12 @@ or Google and I had all of my users passwords saved in plain text like this
 then any one of my employees can look through my database and know what everybody's password is.*/
 
 //Hyperterminal
-$git log
-$git config --global user.email "robert.datja@gmail.com"
-$git config --global user.name "Roberto Datja"
-$git init
-$git add .
-$git commit -m "Level 1 - Username and Password Only"
+git log
+git config --global user.email "robert.datja@gmail.com"
+git config --global user.name "Roberto Datja"
+git init
+git add .
+git commit -m "Level 1 - Username and Password Only"
 
 
 //------------------------------------------------------------------------------
@@ -235,3 +235,218 @@ who try to attack our database using a dictionary attack or by creating a hash t
 $git log
 $git add .
 $git commit -m "Level 3_part2  Hacking 101"
+$git push -u origin main
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+/*LEVEL 4 Salting and hashing with bcrypt
+So now that we've seen what some of the vulnerabilities might be for hashed passwords
+it's time to level up and learn about a way that we can prevent these types of dictionary attacks or hash table cracks.
+And in order to do that we have to learn about salting.
+-
+So let's try and generate Emily's hash from her password.
+So we know that her password is qwerty and we generate a random salt.
+So then let's go ahead and put in her password, qwerty, and then we append at the end that random salt that we generated
+and we end up with a hash.
+-
+-
+Well, we can use something other than MD5 right?
+Another hashing algorithm that's valued because it's incredibly slow.
+And this is where bcrypt comes in.
+This is one of the industry standard hashing algorithms that developers use to keep their users passwords safe.
+Because while you can calculate 20 billion MD5 hashes per second,
+even the latest and the greatest GPUs in 2019 can still calculate only about 17,000 bcrypt hashes per second
+which makes it dramatically harder for a hacker to generate those pre compiled hash tables.
+An a salted hash table instead of taking something like three seconds  if it was hashed with MD5,
+if it was hashed using bcrypt  it would take you something like 8 months, which is not really worth a hacker's while.
+They'll probably go and search out a company that has less security enabled.
+-
+And to make our passwords even more secure when we're using bcrypt it has a concept of what's called Salt rounds.
+How many rounds you're going to salt your password with?
+//And obviously the more rounds you do the saltier your password and also the more secure it is from hackers.
+So what exactly are salt rounds?
+//-Round1
+Well let's say that our original user password was qwerty and we generate a random set of characters as the salt.
+So now we have qwerty and a random set of salt.
+We pass it through our hash function, bcrypt, and we end up with a hash.
+Now that's one round of salting.
+//pasword + salt_round1 => hash1
+//-Round2
+If we wanted to have two rounds of salting, then we take the hash that was generated in round 1
+and we add the same salt from before.
+And now we run it through bcrypt the hash function again and we end up with a different hash.
+//hash1 + salt_round2 => hash2
+//-And the number of times you do this is the number of salt rounds.
+Now the reason why this is genius is because as computers get faster, remember that Moore's Law says that
+every year the number transistors in a computer chip almost doubles  and the cost of that faster computer halves.
+//-So every year you get more computing power for less money.
+And this is where salt rounds comes in.
+When you're hashing your passwords using bcrypt you can set the number of rounds you want to salt your password.
+So that means maybe this year in 2019 you salted 10 rounds but maybe next year you can increase that number to 12.
+And for every increase in that number the amount of time that it takes to hash your password doubles.
+//-And so that means you don't have to change your hashing algorithm or update your code other
+than simply changing one number to keep up with the times.
+-
+So just to review,
+coming back to that user database we'll have each user's username stored,
+we'll have their randomly generated salt stored and then we'll store their hash after a set number of salting rounds.
+And when it comes to checking their password when they login,
+we'll take the password that they put in
+combine it with the salt that's stored in the database
+and run it through the same number of salting rounds until we end up with the final hash
+and we compare the hash  against the one that's stored in the database to see if they've entered the correct password.
+--------------------------------------------------------------------------------
+
+https://www.npmjs.com/package/bcrypt
+
+Hyperterminal: write "node --version" or "node -v".
+
+So anything that is a odd number(Current) bcrypt is not keen to support because it's less stable,
+it has more chances of bugs and they always recommend you to use the latest stable version(LTS).
+https://nodejs.org/en/
+So if you have a older version of Node or if you have even a too new version of Node,
+how can you go back to this version that's on the left hand side here (LTS) on the NOde.js website?
+
+Well you could use something called nvm.
+https://davidwalsh.name/nvm
+And you can install nvm by going to its GitHub repository
+https://github.com/coreybutler/nvm-windows/releases
+//4.1.2 Download nvm-setup.zip - Extract Install
+and
+//4.1.3 simply copying this line of code
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+from https://github.com/nvm-sh/nvm  and pasting it into your terminal.
+//4.1.4 And once you've got it installed,
+restart your terminal, so close it down and open it again,
+//4.1.5 and you should be able to check your version by writing in Terminal "nvm --version"
+and if you get a version back then that means it's definitely installed
+and you can use it to update or downgrade your Node version.
+-
+So we're going to aim for v18.12.1 or whatever it is that you see when you go on to nodejs.org, the long term support version.
+And we're going to use nvm to install Node on that version by simply writing in Terminal
+//4.1.6 nvm install 18.12.1" and hit enter
+and it will download and install that latest stable version of Node for you.
+Now once you've got the latest stable version downloaded and installed,
+you can go ahead and look for the compatible version of bcrypt.
+So at the moment we're on version 10 and bcrypt should be three or above.
+--
+//4.2 Now at this current point in time, if I simply try and write in Terminal
+cd over to my secrets project
+and run "npm i bcrypt"
+then you can see I get some warnings and I suspect this is probably only going to happen for these few days
+while the bcrypt team scrambles to try and update their code.
+But if you get something similar like I do,
+how would you investigate to see how to fix this or whether if you even need to fix it?
+//4.2.2
+With every NPM package there's always a link to the repository where the code is hosted on GitHub.
+And on GitHub you can always explore the issues
+that people are having while they're trying to use this repository.
+And you can see that recently 3 days ago, five days ago, everybody seems to be having issues with installing bcrypt.
+And if you click on it
+you'll see a discourse or a chat or messages between the creator of the repository and people who are experiencing problems.
+And you can see whether if you are getting similar problems.
+-
+//Now if we have error, go to github repository isuses to find solution that people are recommending:
+Example
+//4.2.3 change my installation from "npm i bcrypt"  to "npm i bcrypt@3.0.2" command
+I no longer get all of these problems and I have my package successfully installed.
+So you might not experiences at all.
+You might not get any problems at all other than maybe all two NPM warnings
+because we don't have a description or a repository for our packages over here.
+But other than that you might actually have no problems.
+But if you do experience an issue with bscript or any other package in the future
+you'll know how to investigate the issue and see if there are some solutions being offered for that particular issue.
+All right, so now that we have bcrypt successfully installed in our project,
+---
+//4.3
+the next step is to actually use it.
+So we're gonna go ahead and swap out |delete|comment:   var md5 = require('md5');
+and instead we're going to be using bcrypt. https://www.npmjs.com/package/bcrypt
+//4.3.1 const bcrypt = require('bcrypt');
+//4.3.2 const saltRounds = 10;
+And if you remember that the more that you increase the number the harder your computer will also have to work to generate those hashes.
+And if you scroll down it https://www.npmjs.com/package/bcrypt actually shows you
+how long it will take to generate your hashes or how many hashes are created depending on how you change this number.
+So if you set that salt round number to 31 then on a 2GHz core you can expect to take two days or three days to generate a hash
+which is which might look like your app is crashing but it's actually just hashing away.
+So at least for 2019 and 2020, I would recommend keeping the salt round at 10.
+-
+-
+And to actually use bcrypt https://www.npmjs.com/package/bcrypt,
+//4.4 Technique 2 (auto-gen a salt and hash):
+bcrypt.hash(myPlaintextPassword, saltRounds, function(err, hash) {
+    // Store hash in your password DB.
+});
+We're going to use the hash function (passing in
+the password that the user has typed in when they registered and also the number of rounds of salting we want to do)
+and bcrypt will automatically generate the random salt
+and also hash our password with the number of salt rounds that we desired.
+//4.4 full----------------------------------------
+app.post("/register", function(req, res) {
+  bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+    const newUser = new USER({
+      email: req.body.username,
+      password: hash
+    });
+    newUser.save(function(err) {
+      if (err) {
+        console.log(err);
+      } else {
+        res.render("secrets");
+      }
+    });
+  });
+
+});
+-
+
+
+//4.5
+$ nodemon app.js
+So be sure to remove all the mentions of md5 if you're going to remove that package from your project.
+//console.log("weak paword hashh" + md5("123456")); //3.5 Hashing
+//console.log("strong paword hashh" + md5("shagrf3h4mtd.lyl78;hkhkfjdnjrfjej"));
+So let's go ahead and hit save and nodemon and restart and you can see now our server has started without any problems.
+So whenever you're removing packages be careful that you you're not still using it somewhere inside your code.
+//4.6
+localhost:3000
+let's register a brand new user: user@bcrypthash.com password 123456
+when we look at it in our database it will be easier to see which user was hashed with which hash function.
+So we've successfully gone over to discover the secret page which means that our user should have been successfully saved into our database.
+//4.7
+So let's go ahead and check it out. Robo3T-userDB-usersYou can see that our last user, the one that we registered just now,
+has that email user@bcrypthash.com and their password is quite long and it is a hash generated using bcrypt as well as 10 rounds of salting.
+So if you decide to try and search for this hash on Google or wherever it may be or any sort of hash table,
+rainbow table, whatever it may be, you should not be able to discern the user's original password which is key.
+//4.8
+Now what about when the user tries to login?
+const password = req.body.password;//4.8.1 instead of md5(req.body.password;)
+bcrypt.compare(password, foundUser.password, function(errori, result) { //4.8.2     //instead of if (foundUser.password === password){  res.render("secrets"); }
+  if (result === true) { //4.8.3
+    res.render("secrets");
+    console.log("okay");
+  }
+  else{
+      console.log(errori);
+  }
+});
+//4.9
+localhost:3000 - login - user@bcrypthash.com and 123456 - login =>secretpage which means that that comparison was successful.
+//We've managed to implement bscript along with salting and 10 rounds of salting at that to massively secure our user database
+and make it pretty much impossible to hack using something like a hash table or dictionary attack.
+But we can still level up more and we're going to discover that in the next lesson.
+*/
+//HyperTerminal
+git log
+git add .
+git commit -m "Level 4_part1  Salting and Hashing Passwords with bcrypt"
+git push -u origin main
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
