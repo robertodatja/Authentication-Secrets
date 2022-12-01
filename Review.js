@@ -232,17 +232,17 @@ because of weak hashing algorithms and we're going to learn how we can combat ha
 who try to attack our database using a dictionary attack or by creating a hash table.
 //Write something from keyboard in hackertyper.net to llok like a hacker :D
 */
-$git log
-$git add .
-$git commit -m "Level 3_part2  Hacking 101"
-$git push -u origin main
+git log
+git add .
+git commit -m "Level 3_part2  Hacking 101"
+git push -u origin main
 
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-/*LEVEL 4 Salting and hashing with bcrypt
+/*LEVEL 4 Salting and Hashing with bcrypt
 So now that we've seen what some of the vulnerabilities might be for hashed passwords
 it's time to level up and learn about a way that we can prevent these types of dictionary attacks or hash table cracks.
 And in order to do that we have to learn about salting.
@@ -446,7 +446,312 @@ git commit -m "Level 4_part1  Salting and Hashing Passwords with bcrypt"
 git push -u origin main
 
 
+
+
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+/*Level 5 Cookies ans Sessions, using Passport.js
+/*
+We're now on level 5 authentication and in this lesson we're going to talk all about cookies and sessions.
+Now on the internet cookies are used widely to save these browsing sessions
+and it goes beyond just saving your last actions on the website.
+//Example
+When Amazon adds those cookies to my browser, it also means that when I go and visit another website say
+if I go onto Facebook then it knows who I am and what items I wanted to buy on Amazon.
+And it'll try to remind me of that thing that I wanted to buy on Amazon..
+Once a user comes your website initiates some sort of buying behavior and then they decide to abandon cart,
+you save what it is that they wanted and then on other websites or when they come back onto your website
+you remind them about that thing that they wanted to buy.
+And this is all done through cookies and sessions.
+//
+So if we review this from a web development point of view it means that say
+on day 1 when I go into Chrome and I type in amazon.com, my browser will make a get request to Amazon server requesting for their home page.
+Amazon server will then respond to that request and send over the HTML, CSS and JavaScript files that are needed for my browser to be able to render the Amazon website.
+And then let's say that we decided to add a computer to our cart,
+well that is equivalent to making a post request to Amazon server saying that I would like to buy a computer right?
+And it's at this moment in time when Amazon servers will create a cookie that contains that data, "This user wanted to buy a computer."
+And when it responds to the post request that cookie gets sent along and the browser gets told to save that cookie.
+So that means that if I now get distracted and I decide to go onto Facebook or whatever it may be.
+-
+But if I come back tomorrow  that cookie is still saved on my browser. So the next time that I make a get request to Amazon server,
+that cookie gets sent along with my get request to allow the server to be able to identify who I am and see if I had any previous sessions on Amazon.
+And it's the equivalent of cracking open that fortune cookie revealing what were the previous things that I wanted to buy, so in this case it was a computer.
+And then they could respond with the HTML, CSS, Javascript and also render my cart so that the computer is already added in the cart.
+//
+So there are lots of different types of cookies but the types of cookies
+that we're going to be looking at are the ones that are used to establish and maintain a session.
+Now a session is a period of time when a browser interacts with a server.
+So usually when you log into a website that's when your session starts and that's when your fortune cookie gets created.
+And inside that fortune cookie you'll have your user credentials that says this user is logged in and has been successfully authenticated.
+So that means as you continue to browse the website
+you won't be asked to login again when you try to access a page that requires authentication
+because they can always check against that active cookie that you have on your browser and it maintains your authentication for this browsing session
+until the point when you log out which is when this session ends and the cookie that's related to the session gets destroyed.
+//
+So we're going to be implementing cookies and sessions into our website and we're going to be doing it using something called Passport.
+Now if you're good on Node.js and authentication it's almost impossible to not mention Passport.
+And it's something that's very very flexible and allows you to authenticate your users
+using either a local strategy like what we're doing right now which is username and password
+or use a whole bunch of other services such as Google, Facebook, LinkedIn Twitter.
+And it makes it a lot easier for you to be able to plug these different ways of authentication into your website.
+So let's get started learning about Passport and learning about how we can implement cookies and sessions.
+--------------------------------------------------------------------------------
+
+So let's get started putting into practice what we just learned about and adding cookies and sessions to our current app.
+//5
+And if you still got your server running go ahead and stop it.
+And then we're going to HyperTerminal
+//5.0
+npm i passport passport-local passport-local-mongoose express-session
+//5.1
+So first things first we're going to rip out all of the parts where we were hashing and salting using bcrypt.
+So I'm going to delete it from here.
+//| const bcrypt = require('bcrypt');
+//| const saltRounds = 10;
+And I'm also going to empty out my app.post login route and also the register one.
+// app.post("/register", function(req, res){  });
+// app.post("/login", function(req, res){  });
+//5.2
+and we're going to incorporate hashing and salting and authentication using passport and the packages that we've added just now.
+//5.2.1
+//const session = require('express-session');
+//5.2.2
+//const passport = require('passport');
+//5.2.3
+//const passportLocalMongoose = require('passport-local-mongoose');
+
+//5.3
+https://www.npmjs.com/package/@types/express-session
+https://github.com/expressjs/session
+So the next step is to actually use it.
+And we're going to place this code just above where we have mongoose.connect and just below all of the other app.uses,
+so right here.
+
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+
+//app.use(session({
+  secret: "Our little secret.",
+  resave: false,
+  saveUninitialized: false
+}));
+
+mongoose.connect("mongodb://127.0.0.1/userDB");
+
+
+//5.4
+So now that we've set up our session the next thing to do is to initialize and start using passport.
+And in order to use passport
+//5.4.1
+the first thing we have to do is to initialize it.
+//app.use(passport.initialize());
+//5.4.2
+Now the next line that we have to write is to tell our app to use passport to also set up our session.
+//app.use(passport.session());
+
+-Review-
+So we first tell our app to use the session package that we required up here
+and then we set it up with some initial configuration.
+Next we tell our app to use passport and to initialize the passport package
+and to also use passport for dealing with the sessions.
+-
+And if you want to know how I know to write these bits of code be sure to check out the passport documentation
+https://www.passportjs.org/concepts/authentication/strategies/
+and especially under the configure section where they talk about passport strategies
+and how to verify callbacks
+and how to work with Express based applications which is what we're doing.
+And this is where these bits of code comes from.
+
+//5.5
+So now that we've set up our app to use sessions and passport for managing those sessions,
+the next thing to do is to set up our last package, passport-local mongoose.
+And we've already installed it but in order to use it we have to add it to our mongoose schema as a plugin.
+So this is very similar to what we did when we covered encryption when we used the Mongoose encryption package.
+So here we're going to tap into our userSchema
+and remember that this schema in order for it to have a plugin it has to be a mongoose schema.
+It can't just be a standard Javascript object.
+So make sure that your code still looks like this
+const userSchema = new mongoose.Schema({ email: String, password: String });
+and if you're confused about what I'm talking right now make sure you take a look at the encryption lesson in this module.
+All right.
+//5.5.1
+So we've tapped into our userSchema and we're going to add a plugin to it.
+And the plug in is of course passportLocalMongoose and that is what we're going to use to hash and salt our passwords
+and to save our users into our MongoDB database.
+//userSchema.plugin(passportLocalMongoose);
+//5.5.2
+So now that we've enabled it let's go ahead and use it.
+So right below where we've created our user mongoose model and setup Mongoose to use that schema that we created earlier on,
+we're ready to configure the very last thing which is the passport local configurations
+and we're going to use exactly the same as what the documentation tells us to do
+https://www.npmjs.com/package/passport-local-mongoose  Simplified Passport/Passport-Local Configuration
+which is to create a strategy which is going to be the local strategy to authenticate users using their username and password
+and also to serialize and deserialise our user.
+-
+Now the serialise and deserialise is only necessary when we're using sessions.
+https://www.passportjs.org/concepts/authentication/sessions/
+And what it does is when we tell it to serialize our user
+it basically creates that fortune cookie and stuffs the message namely our users identifications into the cookie.
+And then when we deserialise
+it basically allows passport to be able to crumble the cookie and discover the message inside which is who this user is.
+And all of their identification so that we can authenticate them on our server.
+-
+So normally if you are just using passport and passport local you would have to write a lot more code.
+https://www.passportjs.org/concepts/authentication/sessions/
+But because we're using passport local mongoose it's going to take care of a lot of that in between code for us.
+https://www.npmjs.com/package/passport-local-mongoose  Simplified Passport/Passport-Local Configuration
+So all we need to do is just add these three lines of code right below where we create our new mongoose model
+//passport.use(User.createStrategy());
+//passport.serializeUser(User.serializeUser());
+//passport.deserializeUser(User.deserializeUser());
+and we're now ready to run our app.
+
+//5.5.3
+So let's go over and use nodemon to run our app.js making sure that your MongoDB server is still running.
+//nodemon app.js
+//rs
+Okay so we're pretty happy that our server is running without any warnings or errors
+and if you're getting some problems in here make sure that you firstly review where the code went and whether if you have any typos.
+--Review--
+So we first required three packages express-session, passport and passport local mongoose.
+And then we set up sessions to have a secret, set the resave option to false and set the saveUinitialized option to false as well.
+And then we initialize passport
+And we used a passport to manage our sessions.
+And then we set up our userSchema to use passport local mongoose as a plugin.
+And finally we used our passport local mongoose to create a local log in strategy
+And set a passport to serialise and deserialise our user.
+And notice the order of the code here.
+It's really really important that your code is placed in exactly the same places as I have on the screen here
+because if for example
+you decided to set up sessions after you tried to use the sessions to serialise and deserialise, it won't work.
+And similarly
+if you tried to use passport to create a strategy but you haven't initialized it, that also won't work.
+So this is why the order is important.
+So now that we are assuming that all the configuration is done and dusted,
+
+//5.6
+the next thing to do is to actually setup the register post route and the login post route.
+And we're going to be using our passport-local-mongoose package to do this.
+//https://github.com/saintedlama/passport-local-mongoose
+//5.6.1
+app.post("/register", function(req, res) {
+  User.register( {username: req.body.username}, req.body.password, function(err, user) {
+    if (err) {
+      console.log(err);
+      res.redirect("/register");
+    }else{
+      passport.authenticate("local")(req, res, function(){
+        res.redirect("/secrets");
+      });
+    }
+  });
+
+//5.6.2
+app.get("/secrets", function(req, res) {
+  if (req.isAuthenticated()) { //if a user is already logged in
+    res.render("secrets");
+  } else {
+    res.render("login");
+  }
+});
+
+//5.6.3
+So let's go ahead and save our code and see if our registration section works.
+Making sure that our servers running without any issue
+localhost:3000
+user@passportlocalmongoose.com
+password  123456 and I'm going to click register.
+And now I get taken to the secrets page which means that everything went through successfully.
+//5.6.3.1
+So now if we had ever to Robo 3T and let's view all the documents in our collection
+you can see we have a brand new document here where the username is user@passportlocalmongoose.com and we've got a salt and a hash.
+So this is what I meant when I said that the passport-local-mongoose package
+will salt and hash our password for us automatically without us having to do anything about it.
+//5.6.3.2
+But in addition, when say I navigate a way to, I don't know, the home page
+and I tried to access the secrets page directly:  localhost:3000/secrets
+it gets rendered straight away without me needing to login again
+because I am already authenticated and this is all thanks to the cookie that got my session ID saved
+and we can even see it
+if we go into our Chrome settings and we search for cookies, go to content settings, cookies, see all cookies and site data.
+And if we locate our localhost, you can see that we've got one cookie that's saved right here
+and you can see this is the content that gets created by that express-session's package
+and it saves it inside this cookie called connect.sid and it's set to expire when our browsing session ends.
+//5.6.3.3
+So that means that when I quit Chrome and I open it again and I try to go back to localhost:3000/secrets,
+you can see that I am now no longer authenticated because that cookie got deleted by my browser because it's set to expire when I close down my browser.
+So now it's pushing me towards the login page because I am no longer authenticated.
+So I have to log back in in order to be able to access the privileged areas.
+
+//5.7
+Now at the moment we haven't got our login routes set up yet so let's go ahead and do that.
+//5.7.1
+So inside the app.post section for our login route, let's go ahead and create a new user.
+And this is going to be a new user created from our Mongoose model
+//
+app.post("/login", function(req, res){
+   const user = new User({
+    username: req.body.username,
+    password: req.body.password
+  });
+
+});
+
+//5.7.2
+then we're going to use passport to login() this user and authenticate them.
+And in order to do that we're going to use a login function that passport gives us and it has to be called on the request object.
+https://www.passportjs.org/concepts/authentication/login/
+And if there were  -then- we're simply going to log those errors in the console.
+But if there were no errors  -then- we're going to authenticate our user
+so it means that they've successfully logged in and we're going to call passport.authenticate and we're going to use the local strategy.
+which basically authenticates our user using their password and username.
+req.login(user, function(err) {
+  if (err) { return next(err); }
+  else {
+    passport.authenticate("local")(req, res, function(){
+      res.redirect("/secrets");
+    });
+  }
+});
+So both when they've successfully registered and when they've successfully logged in using the right credentials,
+we're going to send a cookie and tell the browser to hold onto that cookie
+because the cookie has a few pieces of information that tells our server about the user,
+namely that they are authorized to view any of the pages that require authentication.
+localhost:3000 and we're going to click on login.
+So let's find that user that we sign up just now. user@passportlocalmongoose.com and I'm going to put in their password of 123456 and click login.
+And now I get taken to the secret page. So it's working perfectly.
+--------------------------
+
+//5.8
+https://www.passportjs.org/concepts/authentication/logout/
+app.get("/logout", function(req, res) {
+  //deauthenticate the user and end the user session
+  req.logout();
+  //redirect the user to the root route (home page)
+  res.redirect("/");
+});
+
+//5.9
+Whereas if we are already logged in, and we voluntarily say navigate to some website or closed down the tab
+and try to go back to our localhost:3000/secrets our session is saved  and we're still authenticated because of that cookie that we have on our browser.
+--
+Now remember that when you update the code in your app.js and you hit save that, nodemon will restart your server right?
+And whenever your server gets restarted your cookies gets deleted and your session gets restarted.
+So now if I try to go to secrets page  localhost:3000/secrets  it redirects me to login because I'm no longer authenticated.
+That cookie gets deleted every time we restart the server.
+-
+So cookies and sessions and passport are not easy concepts to grasp.
+So I recommend watching this video a couple of times
+and also to be sure that you read through the passport, passport-local, the passport-local-mongoose and the express-session documentation.
+It's through reading all of these very very long tomes essentially that you actually understand how to interact with it
+and why it is the code looks the way it does.
+*/
+git log
+git add .
+git commit -m " Level 5 Cookies ans Sessions, using Passport.js"
+git push -u origin main

@@ -1,0 +1,35 @@
+[33mcommit c89aba3e8600b5c9ed3f5e231016ab2e5e03946d[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Roberto Datja <robert.datja@gmail.com>
+Date:   Wed Nov 23 23:18:56 2022 +0100
+
+    Level 4_part1  Salting and Hashing Passwords with bcrypt
+
+[33mcommit fef5b08a915c9e3d99096b8c86be9a8d143bb63d[m
+Author: Roberto Datja <robert.datja@gmail.com>
+Date:   Sun Nov 6 11:54:52 2022 +0100
+
+    Level 3_part2  Hacking 101
+
+[33mcommit aae0cbc77025aaebcb2c9cbd16b8dacd2a7dc2fa[m
+Author: Roberto Datja <robert.datja@gmail.com>
+Date:   Fri Nov 4 19:37:14 2022 +0100
+
+    Level 3  Hashing Paswords
+
+[33mcommit 08249d1d377a7ca162163d49398acb3459dc59d8[m
+Author: Roberto Datja <robert.datja@gmail.com>
+Date:   Thu Nov 3 19:18:58 2022 +0100
+
+    Level 3 - Using Enviroments Variables to Keep Secrets Safe
+
+[33mcommit 01d7fd5239a06478e7a1c8d49b385d0b3fd41dd7[m
+Author: Roberto Datja <robert.datja@gmail.com>
+Date:   Thu Nov 3 14:02:51 2022 +0100
+
+    Level 2 - Database Encryption
+
+[33mcommit f5f9f03a660fc6fe92930d1409211f36a11fde98[m
+Author: Roberto Datja <robert.datja@gmail.com>
+Date:   Tue Nov 1 07:57:19 2022 +0100
+
+    Level 1 - Username and Password Only
