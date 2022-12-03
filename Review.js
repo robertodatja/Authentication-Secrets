@@ -755,3 +755,484 @@ git log
 git add .
 git commit -m " Level 5 Cookies ans Sessions, using Passport.js"
 git push -u origin main
+
+
+
+
+
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+/*LEVEL 6 OAuth 2.0 & How to iImplement Sign In with Google?
+//6.1
+npm install passport-google-oauth20
+//Part1
+//6.2
+https://www.passportjs.org/packages/passport-google-oauth20/
+Create an application - Google developers console - https://console.cloud.google.com/apis/dashboard?pli=1&project=pristine-gadget-271815
+Create a project - Project Name: Secret - Create
+/* 6.3
+API&Services - OAuth consent screen - External - App name: Secrets
+- User support email: User support email
+- Save and Continue
+- Scopes - Google API Library
+- maps API, Gmail API, Google people API, ...
+And all of those involve jumping through extra hoops.
+But in our case we only want to authenticate them through the use of Google login.
+So we don't have to do any of that and all we need are the default ones that we get for free
+without even the user needing to see a permissions page because these three things (email, profile, openid)
+are transmitted every time you authenticate with Google.
+So now that we're done,
+//the last thing I'll add is that once your website is up and running and you've got a custom domain name and it's being hosted,
+then you'll want to add all of those things in here - App domain: like a privacy policy page or terms of service link and also your main domain.
+So let's go ahead and hit save.
+*/
+/*6.4
+API&Services - Credentials - CREATE CREDENTIALS - OAuth client ID
+
+- Application type: Web application
+
+- Name: Secrets
+
+- Authorized JavaScript origins: http://localhost:3000
+so where is that request to Google going to come from. And in our case it's going to come from our local host.
+And this is obviously for when we're testing. And when your websites live, you can come back here and change it at any time.
+
+-Authorized redirect URIs: http://localhost:3000/auth/google/secrets.
+So this is a route that we're going to plan out on our server when Google has authenticated our user to return to
+so that we can then locally authenticate them and save the session and cookies and all of that.
+And I'm gonna come back to this route very very shortly
+but for now just check to make sure that you have inserted in here exactly the same string as I have
+because if it's not, then our authentication will fail and it'll be hard to identify down the line.
+So once you've made sure that both of these are correct then go ahead and hit enter
+and that adds those to our credentials and we can go ahead and create a client ID.
+-Create
+I'm going to go back to Atom and open up my .env file and I'm going to add  them in using the .env format.
+Client_ID=...
+Client_SECRET=...
+
+//Part1-Review
+and we can get back to setting up our Google OAuth strategy using passport.
+So we've done this part. https://www.passportjs.org/packages/passport-google-oauth20/
+We've created an application on Google Developer console and we now have a client ID and client secret.
+
+//Part2
+//6.5
+https://www.passportjs.org/packages/passport-google-oauth20/
+Configure Strategy
+//6.5.1
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+//6.5.2
+https://www.passportjs.org/packages/passport-google-oauth20/
+And I'm gonna copy-paste it in here below where we have serialize and deserialize our user
+passport.use(new GoogleStrategy({
+    clientID: GOOGLE_CLIENT_ID,
+    clientSecret: GOOGLE_CLIENT_SECRET,
+    callbackURL: "http://www.example.com/auth/google/callback"
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+  }
+));
+And it's really important that your code goes in the right order.
+So for example:
+ we can't put that code above this line (line15) because it won't work
+ and we can't put it above the session because then it won't save the user login sessions.
+So this is where we're going to put it after all of the setup and right before all the routes.
+
+//6.5.3
+So let's go ahead and update some of these place holders.
+//clientID: process.env.CLIENT_ID
+//clientSecret: process.env.CLIENT_SECRET
+//callbackURL: "http://localhost:3000/auth/google/secrets."
+And finally we have to change the callback URL to the same one that we put in on the Google API dashboard.
+https://console.cloud.google.com/apis/credentials/oauthclient/488366710860-k1c2maleqf3m9sknncmuvjvc3bpn2uln.apps.googleusercontent.com?organizationId=0&project=pristine-gadget-271815
+Authorized redirect URIs, For use with requests from a web server
+And my callback URL hits up a path on my server at /auth/google/secrets which we will set up very very shortly.
+
+//6.5.4
+Now there's just one more thing that we need to add to this configuration. And the only reason why we need it is
+because Google has recently announced that they are sunsetting the Google+ API and all things related to Google+.
+And they're finally giving up on trying to make people use their Google+ service as a social media site.
+https://blog.google/technology/safety-security/project-strobe/
+-
+So if we head over to the GitHub repository for this package: passport-google-oauth20
+https://github.com/jaredhanson/passport-google-oauth2
+So here if you go into the issue section
+-
+I've noticed that people have been talking about the // Google+ deprecation.
+https://github.com/jaredhanson/passport-google-oauth2/issues?q=Google%2B+deprecation
+//And the problem is that Google made a recent announcement saying that Google+ is sunsetting.
+So previously this package relied on Google+ to obtain user information so they got the user's Google+ profile.
+And people are wondering how would we proceed once that API deprecates.
+So if you scroll down a little bit,
+you'll notice there's a post by this guy MarshallOfSound commented on Dec 21, 2018
+https://github.com/jaredhanson/passport-google-oauth2/pull/51
+usually the most helpful posts have the most upvotes or thumbs up and you can see that when you're just scrolling through as well.
+And this guy is very kindly done all of the heavy lifting for us
+//and he's put in a new pull request to fix this package in regard to this deprecation of the Google+ API.
+now what he's saying is
+all you have to do to fix this is to simply add this in these strategy options.
+//6.5.4
+So let's go ahead and copy-paste
+userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
+and now when we use passport to authenticate our users using Google OAuth
+we're no longer gonna be retrieving their profile information from their Google+ account
+but instead we're going to retrieve it from their /userinfo which is simply another endpoint on Google.
+Now how would you have known to do this?
+Well it's very likely that at some point if the Google+ API deprecates then your code might not work.
+You're probably going to get some warnings down the line in your console and it'll tell you something like "Google+ API deprecated.
+Fix it by doing this.
+And I'm simply pointing you to this to future-proof the course because I know that in a few weeks or a few months Google is going to pull the plug and your code might break.
+But adding this means that we should be now future-proof and it should now work for you even if you're listening to this far ahead in the future.
+
+//6.5.5
+So the next thing I want to point out is here are  - all the options for using the Google strategy to log in our user.
+And once that's gone through we have a callback function
+and this is where Google sends back a accessToken: which if you remember,
+accessToken: is the thing that allows us to get data related to that user which allows us to access the user's data for a longer period of time.
+We've got their profile: which is essentially what we're interested in because that's going to contain their email, their Google ID and anything else that we have access to.
+
+//6.5.6
+And finally we use the data that we get back,
+namely their googleId,
+to either find a user with that ID in our database of users or create them if they don't exist.
+-
+Now I think you have to realize is that if you try to search for this method, findOrCreate, it's not actually a MongoDB or a Mongoose function.
+And if you click the first thing you see in Google is a Stack Overflow query
+Google - User.findOrCreate mongoose - https://stackoverflow.com/questions/20431049/what-is-function-user-findorcreate-doing-and-when-is-it-called-in-passport
+and this guy says "I can't find the documentation on this function and I can't make it work."
+//2 Answers:
+//1:
+And the answer is "This is not actually a function.
+It's something that passport, the people who documented this package came up with as pseudo codes or fake code
+https://www.passportjs.org/packages/passport-google-oauth20/ - Configure Strategy - User.findOrCreate({ googleId: profile.id }, function (err, user) {
+and they basically try and tell you to implement some sort of functionality to find or create the user."
+And they point out how you might be able to implement something like this.
+//So findOne, and then create the user and then save the user.
+
+//2:
+So you can either follow this advice or something that might make your life a little bit easier
+is this guy has pointed out that there's actually an NPM package called mongoose-findorcreate.
+And this package essentially allows you to make that code just work.
+So they've created that function for you in the package and it does exactly the same as what this person has described up here.(//1:)
+And all you have to do to make this work is to just install it and require it.
+
+//6.6
+So let's go ahead and do that.
+https://www.npmjs.com/package/mongoose-findorcreate
+//6.6.0
+npm install mongoose-findorcreate.
+//6.6.1
+const findOrCreate = require('mongoose-findorcreate')
+//6.6.2
+Now the final step that the documentation tells us to do is to add this as a plugin to our schema.
+userSchema.plugin(findOrCreate);
+So now our code should work and we should be able to tap into our user model and call this function findOrCreate which previously didn't exist.
+--------------------------------------------------------------------------------
+
+So now that we've set all of this up in our backend,
+the next thing to do is to figure out a way for us to be able to tap into it from our frontend right?
+-
+At the moment on our website there's no way of logging in with Google.
+nodemon app.js - localhost:3000 -click on login or register there's no button for me to go down the Google authentication route
+because all of this is linked up to our local authentication. So what do we have to do?
+//6.7
+Well, we have to add some buttons onto these websites.
+//6.7.1
+views folder - register.ejs - uncomment lines 27-36
+So now when I refresh this page we get a button over here that says "Sign up with Google".
+//6.7.2
+do the same on our login page (lines 27-36)
+-
+so that they can access the sign in with Google both when they try to login and register.
+So these buttons are pretty much identical other than where they're located.
+One is in registered and one is and login. And they both contain a anchor tag that links to the href="/auth/google".
+So when the user clicks on this button, it's gonna make a get request to this path: "/auth/google"
+And we haven't actually addressed that in our code so let's do that now.
+//6.7.3
+Inside our app.js right below where we've got our app.get/ root route,
+let's go ahead and add a app.get for the route that the button will hit up which is /auth/google.
+And then let's add our callback. And inside our callback is where we're going to initiate authentication with Google.
+So to do that we're going to use passport of course and we're going to authenticate our user.
+And then we provide the type of strategy that we want to authenticate our user with, so this is going to be "google" as a string.
+But in this case we're using the Google strategy.
+app.get("/auth/google", function(req,res){
+ passport.authenticate('google', { scope: ["profile"] })
+});
+-
+So we're starting to see how passport can be used flexibly and by adding in or switching out
+different strategies we can implement lots of different ways of authenticating our user using the same library.
+Now the next thing we have to provide is a scope. Now how do I know about all of this?
+Well of course it's from the documentation. https://www.passportjs.org/packages/passport-google-oauth20/ -Authenticate Requests
+Copy-Paste
+//6.7.3_
+app.get("/auth/google",
+ passport.authenticate('google', { scope: ["profile"] })
+);
+So in this case what we're doing is
+we're saying use passport to authenticate our user using the Google strategy
+which we have setup over here as a new Google strategy
+passport.use(new GoogleStrategy({ ...})//6.5.2
+passing in all of those things: clientID, clientSecret, ... to help Google recognize our app which we have set up in the dashboard.
+And then we're saying when we hit up Google,
+we're going to tell them that what we want is
+the user's profile and this includes their email as well as their user ID on Google which we'll be able to use and identify them in the future.
+//And this line of code here:  passport.authenticate('google', { scope: ["profile"] })
+ should be enough for us to bring up a pop up that allows the user to sign into their Google account.
+
+--------------------------------------------------------------------------------
+nodemon app.js - localhost:3000 - register - click on the "Sign up with Google".
+And now you can see we get redirected to a page on Google itself and we're able to login using our Google account.
+So I'm going to select my account to login, but then I get an error and it says  "Cannot GET /auth/google/secrets".
+-
+Now if that route is familiar to you, there's a good reason for that
+because that's what we set up right here, our authorized redirect URI or URL: http://localhost:3000/auth/google/secrets.
+And this is where Google will send the user after it's authenticated them on their server.
+You can see it's pointed us back to our website localhost right?
+
+//6.7.4
+So we need to add this route  auth/google/secrets
+to be able to authenticate them locally on our website and to save their login session using sessions and cookies.
+And if you take a look at the next part of this authenticate request documentation,
+https://www.passportjs.org/packages/passport-google-oauth20/
+you can see they provide an example of how you might set this up.
+
+app.get(""/auth/google/callback",
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  });
+So it's again going to be an app.get.
+And this request, this GET request, gets made by Google when they try to redirect the user back to our website.
+And this string has to match what we specified to Google previously.
+And then we're going to authenticate the user locally
+and if there were any problems we're going to send them back to the login page again.
+But if there were no problems then we can redirect them to the secrets page or any other sort of privileged page.
+So let's go ahead and copy all of this and paste it into our app.js right below the other app.get.
+And I've just noticed that this is also single quotes. People are very inconsistent when they type Javascript but I like to keep it all the same so it doesn't confuse me.
+And we're also going to change it here.
+//1
+Now notice here that the route is /auth/google/callback.
+And all we have to do is change this to secrets so that it matches exactly.
+http://localhost:3000/auth/google/secrets.
+//2
+Now the rest of the code we can leave as the same
+because the if the authentication fails then we're going to redirect them to the login route, we have a app.get for the login route.
+
+app.get(""/auth/google/secrets", //6.7.4_1
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect secrets.
+    res.redirect('/secrets'); /6.7.4_2
+  }
+);
+But if it was successful then we're going to redirect them to the secrets page.
+So we res.redirect it's going to go to /secrets
+and this will take them to here:   app.get("/secrets",...)
+And we can check to see if the user is authenticated in which case we'll render the secrets page otherwise we'll redirect them back to the login page.
+So this is pretty much all the code that we need in order to allow users to login using Google on our website.
+
+--------------------------------------------------------------------------------
+//I
+So let's check out what we get back from Google by going into this callback function
+and let's simply log the profile of the user that we get back.
+console.log(profile)
+passport.use(new GoogleStrategy({
+  function(accessToken, refreshToken, profile, cb) {
+    console.log(profile);
+  }
+);
+So now, when the user clicks on that button that says "Sign up with Google",
+it will hit up the: href="/auth/google" route
+which gets caught over here:
+app.get('/auth/google',
+  //and that will initiate authentication on Google's servers asking them for the user's profile once they've logged in.
+  passport.authenticate('google', { scope: ['profile'] })
+);
+
+//II
+Now once that's been successful, Google will redirect the user back to our website
+and make a get request to /auth/google/secrets: app.get("/auth/google/secrets", ...)
+And it's at this point where we will authenticate them locally and save their login session.
+//III
+Now once they've been successfully authenticated, we take them to /secrets.
+But at this stage, the Google authentication has already completed and this callback function gets triggered.
+And we will log that profile console.log(profile) and try to create them as a user on our database.
+
+----------------------------------------
+So let's save our app.js and test it out.
+So let's go back to our home page localhost:3000.
+Let's register over here, click on "Sign up with Google" and I'm going to sign in using my Google account here.
+Now at this point you might end up with an error like this. "Failed to serialize user into session".
+Why is this?
+//6.8
+Instead of //5.5.2
+So let's go ahead and replace the code where we serialize and deserialize our user for local authentication
+from here https://www.passportjs.org/concepts/authentication/sessions/
+and replace it so that it can work with any kind of authentication.
+--------------------------------------------------------------------------------
+//1
+So let's hit save over here and now if we go back to localhost:3000 we register our user using Google
+then you can see it takes us straight to the secret page.
+//2
+Now the other thing we tried to find out is
+we tried to log the Google Profile that we got sent after the user has been authenticated by Google.
+And you can see that it's this JSON over here (in HyperTerminal):
+{
+  id: '...',
+  displayName: '...',
+  name: { familyName: '...', givenName: '...' },
+  photos: [...],
+  provider: 'google',
+  _raw: '{...}',
+  _json: {...}
+}
+and it has a id for the user. So this is going to uniquely identify this user on the Google user database.
+It has their name and it can split it into family name and given name.
+It also got some photos if they have any, a picture of them.
+//But the most important thing for us to save into our database is this id because this id will identify them when they next try to login.
+So if they create any data on our website we're going to associate it all with this id.
+//3
+So if you look inside our database at the moment: HyperTerminal-newtab2-mongosh-use userDB-db.users.find() or in Robo 3T,
+you'll notice that a new user was created.
+-
+If  No new user getting created using findOrCreate
+then drop the database, go to HyperTerminal-newtab2:
+use userDB;
+db.dropDatabase();
+-
+then , go to HyperTerminal-newtab2:
+use userDB;
+db.users.find();
+  [ { _id: ObjectId("638a819efbfaeb4e711fed13"), __v: 0 } ]
+But all we have is an automatically generated MongoDB id and nothing else
+whereas our previous users had a username and a salt, a hash or an email and a password.
+But in this case,
+we don't really have anything for this user and we don't have any way of tying this newly registered user with their Google id.
+-
+//4
+So the next time they log in, we won't be able to find them on our database.
+And I can confirm this by simply logging out and trying to login again, sign in with Google,
+and you can see that in our database, all we've done is just create a new user. We now have the seventh user.
+So that Google id is not being tied to the id on our user database!
+--
+So let's go ahead and delete these two entries in Database or drop Database
+and let's go and fix our code.
+//6.8.2
+So let's go ahead and add a new field called googleId with a capital I. It's also going to be a string.
+But this time when a new user registers on our website,
+we're going to find and see if we already have a record of their Google id on our user database
+in which case we're gonna save all the new data associated with that id
+or otherwise we're going to create it on our database and save this information for future.
+--------------------
+//1
+So let's save our app.js and log out of our website and then go ahead and register again. And we're going to sign up with Google.
+And now if we go over to our Robo 3T you can see our new user gets created with an id that identifies them on our user database
+but another id that identifies them as a unique Google user.
+//1.2
+So this is their id which means that
+if I log out now and I tried to login again, I get to the secrets page but we don't actually create a new user.
+//They're still being identified as user 6.
+//1.3
+And this is the same thing even if I log out and try to register again as the same Google user.
+You can see that I'm still not creating another user here because I'm able to find this user by their Google id and know that they already exist.
+-
+Now remember that because we're authenticating our users using Google we only get what's equivalent to their user name on the Google user database.
+We don't get their password and this is great because it means we don't have to save it.
+We don't have to take care of it if it gets lost or it gets leaked that's all on Google
+and they have a lot more engineers, a lot more resources, to keep their user's passwords or whatever other pieces of information safe
+and all we need to do is just to retrieve it when we need it.
+
+--------------------------------------------------------------------------------
+//6.9
+So the last thing I want to do before we finish up is to style up our buttons
+because if we add a few more buttons over here, sign up with Google, sign up with Facebook,
+it doesn't really shout to me that this is something related to Google right?
+//6.9.0
+download the code https://lipis.github.io/bootstrap-social/
+and inside the extracted folder you should see a file called bootstrap-socia.css
+and we're simply going to drag that file into our public CSS folder next to our styles.css.
+//6.9.1
+<link rel="stylesheet" href="/css/bootstrap-social.css">   <!-- Level6.9.1 -->
+<link rel="stylesheet" href="css/styles.css">
+</head>
+
+//6.9.2
+https://lipis.github.io/bootstrap-social/  - Add some buttons!
+So the classes that we need are btn-social which adds some of the sizing and the rounded corners et cetera, and then whichever social button we want.
+So in our case it's going to be btn-social and btn-google.
+<div class="card-body">
+  <a class="btn btn-block  btn-social btn-google" href="/auth/google" role="button">
+    <i class="fab fa-google"></i>
+    Sign Up with Google
+  </a>
+</div>
+
+//6.9.3
+And in the future if you wanted to add another button say, I don't know, "Sign up with Facebook"
+then all you have to do is to change this to Facebook and change the icon to Facebook.
+<!-- Level6.9.3 Go over to our register.ejs and add the code below-->
+<div class="card-body">
+  <a class="btn btn-block  btn-social btn-facebook" href="/auth/google" role="button">
+    <i class="fab fa-facebook"></i>
+    Sign Up with Facebook
+  </a>
+</div>
+
+//6.9.4
+So I'm going to go and delete that last part
+and I'm going to go into my login.ejs file and also implement the same thing for this button here. So btn-social and btn-google.
+-
+So now both my login and register pages: http://localhost:3000/login   & http://localhost:3000/register
+have their buttons styled up and also working plus best of all because we've implemented sessions and cookies
+even if I go ahead and navigate to a different page: example http://localhost:3000
+I should still be authenticated and be able to access the secrets page, without logging in again.
+http://localhost:3000/secrets
+
+*------------------------------------------------------------------
+While I'm registered or logged in,
+But notice that when I click on log out and I tried to log in again
+I don't get taken to Google again and have to log into my account.
+http://localhost:3000/logout - http://localhost:3000/login => Sign In with Google => http://localhost:3000/secrets
+And the reason is:
+ because we're only persisting the login session on our Web site.
+So it means that:
+ once they manage to get to secrets and they navigate around on our website,
+if they wanted to access the authentication required route to secrets
+remember that in our code when they hitup the secret route
+we run the req.isAuthenticated to see whether if we can render that page for them.
+---
+So this login session and log out session is related to how they can access our website
+but it doesn't log them out of their Google account.
+In order to do that
+we would need a button that would redirect them to https://accounts.google.com/logout
+But that's kind of annoying because it means that it would log them out of their Gmail,
+their Google Maps and every single other service that they use on Google which is usually not what you want.
+So in our case we only need our session to persist for the users login for our website
+and we don't need to worry about logging them out of Google.
+
+--------------------------------------------------------------------------------
+So now that we've implemented the Google OAuth social login strategy
+and we've kind of delegated this whole complicated process of securing a user's sensitive information to Google,
+/6.10
+//as a challenge
+I want you to try and see if you can implement login with Facebook.
+It will involve pretty much the same steps as what we've done with Google
+but it will involve a little bit of searching around and a little bit of googling and a little bit of figuring it out.
+But at this stage you should be able to struggle through this and figure out how you can implement it without too much help from myself.
+So best of luck and I'll see you on the next lesson.
+*/
+
+git log
+q
+git add .
+git commit -m " Level 6 OAuth 2.0 & How to iImplement Sign In with Google?"
+git push -u origin main

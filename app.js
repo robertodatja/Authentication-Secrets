@@ -12,20 +12,27 @@ const session = require('express-session'); //5.2.1
 const passport = require('passport'); //5.2.2
 //We don't need to require passport-local because it's one of those dependencies that will be needed by passport-local-mongoose
 const passportLocalMongoose = require('passport-local-mongoose'); //5.2.3
+const GoogleStrategy = require('passport-google-oauth20').Strategy; //6.5.1
+const findOrCreate = require('mongoose-findorcreate') //6.6.1
+
 
 const app = express();//Create a new app instance using express
 app.use(express.static("public")); //Tell the app to use all the statics files inside the public folder
 app.set('view engine', 'ejs');//Tell the app to use EJS as its view engine as the templating engine
-app.use(bodyParser.urlencoded({ //Require body-parser module to parser the requests
-  extended: true
-}));
+app.use(
+  bodyParser.urlencoded({ //Require body-parser module to parser the requests
+   extended: true
+  })
+);
 
-app.use(session({ //5.3 //Set up express session
-  //js object with a number of properties (secret, resave, saveUninitialized)
-  secret: "Our little secret.",
-  resave: false,
-  saveUninitialized: false
-}));
+app.use(
+  session({ //5.3 //Set up express session
+   //js object with a number of properties (secret, resave, saveUninitialized)
+   secret: "Our little secret.",
+   resave: false,
+   saveUninitialized: false
+  })
+);
 
 app.use(passport.initialize());//5.4.1  Initialize and start using passport.js
 app.use(passport.session());//5.4.2  Tell the app to use passport to also setup the sessions
@@ -35,11 +42,17 @@ mongoose.connect("mongodb://127.0.0.1/userDB",{  //Connect to mongoDB
   useUnifiedTopology: true
 });
 
-const userSchema = new mongoose.Schema({ email: String, password: String }); //The userSchema is no longer a simple javascript object, it is now an object created from the mongoose.Schema class
+//The userSchema is no longer a simple javascript object, it is now an object created from the mongoose.Schema class
+const userSchema = new mongoose.Schema({
+  email: String,
+  password: String,
+  googleId: String //6.8.2
+});
 
 /*In order to set up the passport-local-mongoose, it needs to be added to the mongoose schema as a plugin
 That is what we will use now to hash and salt the passwords and to save the users into the mongoDB database */
 userSchema.plugin(passportLocalMongoose); //5.5.1
+userSchema.plugin(findOrCreate); //6.6.2
 
 const User = new mongoose.model("USER", userSchema); //Setup a new User model and specify the name of the collection User
 
@@ -49,8 +62,42 @@ Serialize the user is to basically create the cookie and add inside the message,
 Deserialize the user is to basically allow passport to be able to crumble the cookie and discover the message
 inside which is who the user is all of the user's identification so that we can authenticate the user on the server*/
 passport.use(User.createStrategy()); //5.5.2
-passport.serializeUser(User.serializeUser()); //5.5.2
-passport.deserializeUser(User.deserializeUser()); //5.5.2
+
+// passport.serializeUser(User.serializeUser()); //5.5.2
+//6.8
+passport.serializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, {
+      id: user.id,
+      username: user.username,
+      picture: user.picture
+    });
+  });
+});
+// passport.deserializeUser(User.deserializeUser()); //5.5.2
+//6.8
+passport.deserializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, user);
+  });
+});
+
+passport.use(
+  new GoogleStrategy( //6.5.2
+    {
+     clientID: process.env.CLIENT_ID, //6.5.3
+     clientSecret: process.env.CLIENT_SECRET, //6.5.3
+     callbackURL: "http://localhost:3000/auth/google/secrets", //6.5.3
+     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo" //6.5.4
+    },
+    function(accessToken, refreshToken, profile, cb) {
+     console.log(profile);
+     User.findOrCreate({ googleId: profile.id }, function (err, user) {
+       return cb(err, user);
+     });
+    }
+  )
+);
 
 
 /*----------------------------------------------------------------------------*/
@@ -58,6 +105,20 @@ passport.deserializeUser(User.deserializeUser()); //5.5.2
 app.get("/", function(req,res){ //Target the home/root route to render the home page
   res.render("home");
 });
+
+//6.7.3_  Setup 2 buttons root route "Singup with google" & "Singin with google"
+app.get("/auth/google",
+ passport.authenticate("google", { scope: ["profile"] })
+);
+
+//6.7.4_1
+app.get("/auth/google/secrets",
+  passport.authenticate("google", {failureRedirect: "/login"}),
+  function(req, res) {
+    // Successful authentication, redirect to secrets.
+    res.redirect("/secrets"); //6.7.4_2
+  }
+);
 
 app.get("/login", function(req,res){ //Target the login route to render the login page
   res.render("login");
@@ -83,12 +144,13 @@ app.get("/secrets", function(req, res) { //5.6.2 //Target the secrets route to r
   }
 });
 
-
-app.get("/logout", function(req, res) { //Target the logout route
-  req.logout(); //deauthenticate the user and end the user session
-  res.redirect("/"); //redirect the user to the root route (home page)
+app.get('/logout', function(req, res, next) { //Target the logout route
+  //https://stackoverflow.com/questions/72336177/error-reqlogout-requires-a-callback-function
+  req.logout(function(err) { //deauthenticate the user and end the user session
+    if (err) { return next(err); }
+    res.redirect('/'); //redirect the user to the root route (home page)
+  });
 });
-
 
 
 /*----------------------------------------------------------------------------*/
