@@ -46,7 +46,8 @@ mongoose.connect("mongodb://127.0.0.1/userDB",{  //Connect to mongoDB
 const userSchema = new mongoose.Schema({
   email: String,
   password: String,
-  googleId: String //6.8.2
+  googleId: String, //6.8.2
+  secret: String //6_2.4
 });
 
 /*In order to set up the passport-local-mongoose, it needs to be added to the mongoose schema as a plugin
@@ -128,20 +129,71 @@ app.get("/register", function(req,res){ //Target the register route to render th
   res.render("register");
 });
 
+/*
 app.get("/secrets", function(req, res) { //5.6.2 //Target the secrets route to render the secrets page
-  /*Course code was allowing the user to go back to the secrets page after loggin out,
-  that is because when we access a page, it is cached by the browser, so when the user is accessing a cached page (like the secrets one)
-  you can go back by pressing the back button on the browser, the code to fix it is the one below so the page will not be cached*/
+  //Course code was allowing the user to go back to the secrets page after loggin out,
+  //that is because when we access a page, it is cached by the browser, so when the user is accessing a cached page (like the secrets one)
+  //you can go back by pressing the back button on the browser, the code to fix it is the one below so the page will not be cached
+
   res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stal   e=0, post-check=0, pre-check=0');
-  /*Check if the user is authenticated and this is where we are relying on passport.js, session, passport-local and passport-local-mongoose
-  to make sure that if the user is already logged in then we should simply render the secrets page
-  but if the user is not logged in then we are going to redirect the user to the login page*/
+  //Check if the user is authenticated and this is where we are relying on passport.js, session, passport-local and passport-local-mongoose
+  //to make sure that if the user is already logged in then we should simply render the secrets page
+  //but if the user is not logged in then we are going to redirect the user to the login page
 
   if (req.isAuthenticated()) { //if a user is already logged in
     res.render("secrets");
   } else {
-    res.render("login");
+    console.log('user does not exist');
+    res.render("/login");
   }
+});
+*/
+
+app.get("/secrets", function(req, res) { //6_2.8
+
+ User.find(  {"secret": {$ne:null}},  function(err, foundUsers){ //6_2.8.1234
+  if (err) {
+   console.log(err);
+  }else {
+   if (foundUsers) {
+    res.render("secrets", {usersWithSecrets: foundUsers}); //6_2.8.56
+   }
+  }
+ });
+});
+
+
+
+//6_2.1
+app.get("/submit", function(req, res) {
+  if (req.isAuthenticated()) { //if a user is already logged in
+    res.render("submit");
+  } else {
+    res.redirect("/login");
+  }
+});
+//6_2.2
+app.post("/submit", function(req, res) {
+  const submittedSecret = req.body.secret
+  //Once the user is authenticated and their session gets saved, their user details are saved to req.user.
+  //console.log(req.user); //6_2.3
+  console.log(req.user.id); //6_2.5
+
+  //6_2.6
+  User.findById( req.user.id, function(err, foundUser) {
+    if (err) {
+      console.log(err);
+    } else{
+      if (foundUser) {
+       foundUser.secret = submittedSecret;
+       foundUser.save( function(){
+         res.redirect("secrets");
+       });
+      }
+    }
+
+  })
+
 });
 
 app.get('/logout', function(req, res, next) { //Target the logout route
@@ -191,7 +243,10 @@ app.post("/login", function(req, res){ //POST request (login route) to login the
   });
 
   req.login(user, function(err) { //5.7.2 Now use passport to login the user and authenticate him - take the user created from above
-    if (err) { return next(err); }
+    if (err) {
+     console.log(err);
+     return next(err);
+    }
     else {
      /*passport.authenticate("local")
      Course code was allowing the user to enter the right username (email) and wrong password
@@ -207,4 +262,6 @@ app.post("/login", function(req, res){ //POST request (login route) to login the
 
 
 //Set up the server to listen to port 3000
-app.listen(3000, function(){ console.log("Server started on port 3000"); });
+app.listen(3000, function() {
+  console.log("Server started on port 3000");
+});
